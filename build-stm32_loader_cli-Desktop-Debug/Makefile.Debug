@@ -248,6 +248,8 @@ debug/main.o: ../stm32_loader_cli/main.cpp C:/Qt/6.5.1/mingw_64/include/QtCore/Q
 		C:/Qt/6.5.1/mingw_64/include/QtSerialPort/qserialportglobal.h \
 		C:/Qt/6.5.1/mingw_64/include/QtSerialPort/qtserialportexports.h \
 		C:/Qt/6.5.1/mingw_64/include/QtCore/QHash \
+		C:/Qt/6.5.1/mingw_64/include/QtCore/QThread \
+		C:/Qt/6.5.1/mingw_64/include/QtCore/QString \
 		../stm32_loader_cli/loader_core.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o debug/main.o ../stm32_loader_cli/main.cpp
 

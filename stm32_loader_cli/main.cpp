@@ -13,9 +13,10 @@
 QSerialPort serialPort;
 
 comm_status_t init_Serial_Port(QString portName);
-comm_status_t write_Serial_Port(uint8_t* pData, uint8_t size);
-comm_status_t read_Serial_Port(uint8_t* pData, uint8_t size);
+comm_status_t write_Serial_Port(uint8_t* pData, uint64_t size);
+comm_status_t read_Serial_Port(uint8_t* pData, uint64_t size);
 
+    uint8_t buff[1024];
 
 int main(int argc, char *argv[])
 {
@@ -37,24 +38,56 @@ int main(int argc, char *argv[])
     /* enable serial port communication */
     init_Serial_Port(cli_flags.value("-p"));
 
-    uint8_t buff[10];
+
 
     buff[0] = 0x7f;
 
-    for(int i=1;i<10;i++)
-        buff[i]=0;
-
     write_Serial_Port(buff, 1);
-    QThread::msleep(100);
-        read_Serial_Port(buff, 10);
+    QThread::msleep(10);
+    read_Serial_Port(buff, 1);
 
+    QString hexadecimal;
+    hexadecimal.setNum(buff[0],16);
+    qDebug() << "7f " + hexadecimal;
 
-    for(int i:buff)
+    buff[0] = 0x11;
+    buff[1] = 0xee;
+
+    write_Serial_Port(buff, 2);
+    QThread::msleep(10);
+    read_Serial_Port(buff, 1);
+
+    hexadecimal.setNum(buff[0],16);
+    qDebug() << "11 ee "+ hexadecimal;
+
+    buff[0] = 0x08;
+    buff[1] = 0x00;
+    buff[2] = 0x00;
+    buff[3] = 0x00;
+    buff[4] = 0x08;
+
+    write_Serial_Port(buff, 5);
+    QThread::msleep(10);
+    read_Serial_Port(buff, 1);
+
+    hexadecimal.setNum(buff[0],16);
+    qDebug() << "address "+ hexadecimal;
+
+    buff[0] = 0xff;
+    buff[1] = 0x00;
+
+    write_Serial_Port(buff, 2);
+    QThread::msleep(50);
+    read_Serial_Port(buff, 256);
+
+    for(int i=0;i<256;i++)
     {
-       QString hexadecimal;
-        hexadecimal.setNum(i,16);
+        hexadecimal.setNum(buff[i],16);
+        if(hexadecimal.length() > 1)
+        qDebug() << hexadecimal;
+        else
+        qDebug() << "0"+hexadecimal;
 
-    qDebug() << hexadecimal;
     }
 
 
@@ -102,15 +135,18 @@ comm_status_t init_Serial_Port(QString portName)
  * COMM_WRITE_ERROR: Upon error during write/timeout
  *
  */
-comm_status_t write_Serial_Port(uint8_t* pData, uint8_t size)
+comm_status_t write_Serial_Port(uint8_t* pData, uint64_t size)
 {
-    /* write to the serial port and check the number of bytes written equals size */
-    if (serialPort.write((const char*)pData, size) != size)
-         return COMM_WRITE_ERROR;
+    for(uint64_t idx = 0; idx<size; idx++){
 
-    /* block the flow until the data bytes are written or timeout happened */
-    if(! serialPort.waitForBytesWritten(SERIAL_PORT_WRITE_TIMEOUT))
-         return COMM_WRITE_ERROR;
+        /* write to the serial port and check the number of bytes written equals size */
+        if (serialPort.write((const char*)&pData[idx], 1) != 1)
+            return COMM_WRITE_ERROR;
+
+        /* block the flow until the data byte is written or timeout happened */
+        if(! serialPort.waitForBytesWritten(SERIAL_PORT_WRITE_TIMEOUT))
+            return COMM_WRITE_ERROR;
+    }
 
     return COMM_SUCCESS;
 }
@@ -126,7 +162,7 @@ comm_status_t write_Serial_Port(uint8_t* pData, uint8_t size)
  * COMM_READ_ERROR: Upon  error during read/timeout
  *
  */
-comm_status_t read_Serial_Port(uint8_t* pData, uint8_t size)
+comm_status_t read_Serial_Port(uint8_t* pData, uint64_t size)
 {
 
     /* block the flow until the data arrived or timeout happened */
@@ -134,7 +170,7 @@ comm_status_t read_Serial_Port(uint8_t* pData, uint8_t size)
         return COMM_READ_ERROR;
 
     /* read from the serial port and check the number of bytes read equals size */
-    if ( serialPort.read((char *)pData, size) != size)
+    if ( (uint64_t)serialPort.read((char *)pData, size) != size)
         return COMM_READ_ERROR;
 
     return COMM_SUCCESS;

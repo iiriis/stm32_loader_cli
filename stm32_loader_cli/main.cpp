@@ -91,8 +91,9 @@ int main(int argc, char *argv[])
     }
 
 
+    serialPort.close();
 
-    return a.exec();
+    return 0;
 }
 
 /* Setup and Initialize the Serial Communication
